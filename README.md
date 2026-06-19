@@ -27,10 +27,13 @@ Background agents fail silently. A cron job that stops firing, a delivery step t
 ## Usage
 
 ```bash
-python3 gen-dashboard.py && open index.html
+python3 gen-dashboard.py && open index.html      # render from YOUR agents' real state
+python3 gen-dashboard.py --demo --out=demo.html  # render a sample board with fake data
 ```
 
-The generator (`gen-dashboard.py`) is the whole tool. It's currently wired to two example agents (a "Career Engine" daily-brief job and a "Kalshi Engine" paper-trading picks job) by reading their launchd labels, run-logs, and output files. **Adapt the `*_state()` functions** to point at your own agents' logs and artifacts.
+📺 **See it without installing anything:** open [`demo.html`](demo.html) (raw HTML, sample data) — or [view it rendered via htmlpreview](https://htmlpreview.github.io/?https://github.com/tarang-tj/AgentTracker/blob/main/demo.html).
+
+The generator (`gen-dashboard.py`) is the whole tool. It's currently wired to two example agents (a "Career Engine" daily-brief job and a "Kalshi Engine" paper-trading picks job) by reading their launchd labels, run-logs, and output files. **Adapt the `*_state()` functions** to point at your own agents' logs and artifacts. The committed `demo.html` is generated with `--demo` (fabricated data) so the live view never exposes real machine state.
 
 ## Design principles
 

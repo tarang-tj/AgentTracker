@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="refresh" content="300">
+<title>Agent Tracker</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; margin:0; padding:0; }
+  body { font: 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+         background:#0d1117; color:#c9d1d9; padding:28px; max-width:1000px; margin:0 auto; }
+  h1 { font-size:22px; font-weight:650; letter-spacing:-.3px; }
+  .sub { color:#8b949e; font-size:13px; margin-top:4px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:16px; margin:24px 0; }
+  .card { background:#161b22; border:1px solid #30363d; border-radius:12px; padding:18px; }
+  .card-head { display:flex; align-items:center; gap:10px; margin-bottom:2px; }
+  .emoji { font-size:20px; }
+  .title { font-size:16px; font-weight:600; flex:1; }
+  .badge { font-size:11px; font-weight:700; padding:3px 9px; border-radius:20px; letter-spacing:.5px; }
+  .sched { color:#8b949e; font-size:12px; margin-bottom:12px; }
+  .facts { display:flex; flex-direction:column; gap:6px; }
+  .row { display:flex; justify-content:space-between; font-size:13px; border-bottom:1px solid #21262d; padding-bottom:5px; }
+  .k { color:#8b949e; } .v { color:#c9d1d9; font-weight:500; text-align:right; }
+  .delivery { margin-top:12px; font-size:12px; color:#58a6ff; }
+  .note { margin-top:8px; font-size:11px; color:#d29922; background:#d2992212; border-radius:6px; padding:6px 8px; }
+  h2 { font-size:14px; color:#8b949e; text-transform:uppercase; letter-spacing:.6px; margin:8px 0 12px; }
+  .timeline { background:#161b22; border:1px solid #30363d; border-radius:12px; padding:8px 16px; }
+  .t-row { display:flex; gap:12px; align-items:center; padding:7px 0; border-bottom:1px solid #21262d; font-size:13px; }
+  .t-row:last-child { border-bottom:none; }
+  .t-time { color:#6e7681; font-variant-numeric:tabular-nums; min-width:118px; font-size:12px; }
+  .t-tag { font-size:10px; font-weight:700; padding:2px 7px; border-radius:5px; }
+  .t-career { background:#1f6feb22; color:#58a6ff; }
+  .t-kalshi { background:#8957e522; color:#bc8cff; }
+  .t-msg { color:#c9d1d9; flex:1; }
+  footer { margin-top:24px; color:#6e7681; font-size:12px; text-align:center; }
+</style></head>
+<body>
+  <h1>🛰️ Agent Tracker</h1>
+  <div class="sub">1/4 agents healthy · auto-refresh 5 min · generated 2026-06-19 10:58</div>
+  <div class="grid">
+    <div class="card">
+      <div class="card-head">
+        <span class="emoji">💼</span>
+        <span class="title">Daily Brief Agent</span>
+        <span class="badge" style="background:#3fb9501a;color:#3fb950;border:1px solid #3fb95055;">HEALTHY</span>
+      </div>
+      <div class="sched">daily 07:30</div>
+      <div class="facts"><div class="row"><span class="k">Brief job</span><span class="v">loaded</span></div><div class="row"><span class="k">Liveness job</span><span class="v">loaded</span></div><div class="row"><span class="k">Ran today</span><span class="v">yes</span></div><div class="row"><span class="k">Connectors</span><span class="v">CONNECTORS: calendar=OK gmail=OK</span></div><div class="row"><span class="k">Latest brief</span><span class="v">2026-06-19 (2h ago)</span></div><div class="row"><span class="k">Open failures</span><span class="v">0</span></div></div>
+      <div class="delivery">📲 iMessage → primary handle</div>
+      
+    </div>
+    <div class="card">
+      <div class="card-head">
+        <span class="emoji">🎲</span>
+        <span class="title">Market Picks Agent</span>
+        <span class="badge" style="background:#d299221a;color:#d29922;border:1px solid #d2992255;">DEGRADED</span>
+      </div>
+      <div class="sched">daily 07:00 · PAPER</div>
+      <div class="facts"><div class="row"><span class="k">Picks job</span><span class="v">loaded</span></div><div class="row"><span class="k">Ran today</span><span class="v">yes</span></div><div class="row"><span class="k">Last send</span><span class="v">FAILED</span></div><div class="row"><span class="k">Weather picks</span><span class="v">5</span></div><div class="row"><span class="k">Settled (fwd sample)</span><span class="v">0</span></div><div class="row"><span class="k">Latest log</span><span class="v">3h ago</span></div></div>
+      <div class="delivery">📲 SMS → secondary thread</div>
+      <div class="note">PAPER ONLY — edge not yet proven; tracking, not betting real money.</div>
+    </div>
+    <div class="card">
+      <div class="card-head">
+        <span class="emoji">💾</span>
+        <span class="title">Backup Sync Agent</span>
+        <span class="badge" style="background:#d299221a;color:#d29922;border:1px solid #d2992255;">STALE</span>
+      </div>
+      <div class="sched">daily 02:00</div>
+      <div class="facts"><div class="row"><span class="k">Sync job</span><span class="v">loaded</span></div><div class="row"><span class="k">Ran today</span><span class="v">not yet</span></div><div class="row"><span class="k">Last snapshot</span><span class="v">26h ago</span></div><div class="row"><span class="k">Targets</span><span class="v">3</span></div><div class="row"><span class="k">Errors</span><span class="v">0</span></div></div>
+      <div class="delivery">📲 log only</div>
+      
+    </div>
+    <div class="card">
+      <div class="card-head">
+        <span class="emoji">📡</span>
+        <span class="title">Feed Watcher</span>
+        <span class="badge" style="background:#f851491a;color:#f85149;border:1px solid #f8514955;">FAILED</span>
+      </div>
+      <div class="sched">every 30m</div>
+      <div class="facts"><div class="row"><span class="k">Watcher job</span><span class="v">NOT LOADED</span></div><div class="row"><span class="k">Ran today</span><span class="v">no</span></div><div class="row"><span class="k">Last run</span><span class="v">2d ago</span></div><div class="row"><span class="k">Sources</span><span class="v">12</span></div><div class="row"><span class="k">Errors</span><span class="v">launchd job evicted</span></div></div>
+      <div class="delivery">📲 webhook → notifier</div>
+      
+    </div></div>
+  <h2>Recent activity</h2>
+  <div class="timeline"><div class="t-row"><span class="t-time">2026-06-19 07:48</span><span class="t-tag t-kalshi">Kalshi</span><span class="t-msg">⚠️ send failed (delivery)</span></div><div class="t-row"><span class="t-time">2026-06-19 07:30</span><span class="t-tag t-career">Career</span><span class="t-msg">brief generated; CONNECTORS: calendar=OK gmail=OK</span></div><div class="t-row"><span class="t-time">2026-06-19 07:00</span><span class="t-tag t-kalshi">Kalshi</span><span class="t-msg">daily picks run</span></div><div class="t-row"><span class="t-time">2026-06-18 07:31</span><span class="t-tag t-career">Career</span><span class="t-msg">brief generated; CRM: +1 contacts, +0 opportunities</span></div><div class="t-row"><span class="t-time">2026-06-18 07:00</span><span class="t-tag t-kalshi">Kalshi</span><span class="t-msg">daily picks run</span></div></div>
+  <footer>Read-only view of real on-disk state (launchd · run-log · output artifacts). Regenerate: <code>engine dashboard</code></footer>
+</body></html>

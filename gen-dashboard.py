@@ -17,6 +17,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import sys
 import subprocess
 from datetime import date, datetime
 from glob import glob
@@ -286,12 +287,64 @@ def render(agents: list[dict], activity: list[tuple[str, str, str]]) -> str:
 </body></html>"""
 
 
+def demo_agents() -> list[dict]:
+    """Fabricated sample agents for the public demo — NO real data. Shows every status state."""
+    return [
+        {
+            "name": "Daily Brief Agent", "emoji": "💼", "status": "HEALTHY", "schedule": "daily 07:30",
+            "facts": [("Brief job", "loaded"), ("Liveness job", "loaded"), ("Ran today", "yes"),
+                      ("Connectors", "CONNECTORS: calendar=OK gmail=OK"), ("Latest brief", "2026-06-19 (2h ago)"),
+                      ("Open failures", "0")],
+            "delivery": "iMessage → primary handle",
+        },
+        {
+            "name": "Market Picks Agent", "emoji": "🎲", "status": "DEGRADED", "schedule": "daily 07:00 · PAPER",
+            "facts": [("Picks job", "loaded"), ("Ran today", "yes"), ("Last send", "FAILED"),
+                      ("Weather picks", "5"), ("Settled (fwd sample)", "0"), ("Latest log", "3h ago")],
+            "delivery": "SMS → secondary thread",
+            "note": "PAPER ONLY — edge not yet proven; tracking, not betting real money.",
+        },
+        {
+            "name": "Backup Sync Agent", "emoji": "💾", "status": "STALE", "schedule": "daily 02:00",
+            "facts": [("Sync job", "loaded"), ("Ran today", "not yet"), ("Last snapshot", "26h ago"),
+                      ("Targets", "3"), ("Errors", "0")],
+            "delivery": "log only",
+        },
+        {
+            "name": "Feed Watcher", "emoji": "📡", "status": "FAILED", "schedule": "every 30m",
+            "facts": [("Watcher job", "NOT LOADED"), ("Ran today", "no"), ("Last run", "2d ago"),
+                      ("Sources", "12"), ("Errors", "launchd job evicted")],
+            "delivery": "webhook → notifier",
+        },
+    ]
+
+
+def demo_activity() -> list[tuple[str, str, str]]:
+    return [
+        ("2026-06-19 07:48", "Kalshi", "⚠️ send failed (delivery)"),
+        ("2026-06-19 07:30", "Career", "brief generated; CONNECTORS: calendar=OK gmail=OK"),
+        ("2026-06-19 07:00", "Kalshi", "daily picks run"),
+        ("2026-06-18 07:31", "Career", "brief generated; CRM: +1 contacts, +0 opportunities"),
+        ("2026-06-18 07:00", "Kalshi", "daily picks run"),
+    ]
+
+
 def main():
-    OUT.parent.mkdir(parents=True, exist_ok=True)
-    agents = [career_state(), kalshi_state()]
-    html = render(agents, recent_activity())
-    OUT.write_text(html)
-    print(f"dashboard written: {OUT}")
+    demo = "--demo" in sys.argv
+    out = OUT
+    for a in sys.argv:
+        if a.startswith("--out="):
+            out = Path(a.split("=", 1)[1]).expanduser()
+
+    out.parent.mkdir(parents=True, exist_ok=True)
+    if demo:
+        agents = demo_agents()
+        html = render(agents, demo_activity())
+    else:
+        agents = [career_state(), kalshi_state()]
+        html = render(agents, recent_activity())
+    out.write_text(html)
+    print(f"dashboard written: {out}" + (" (DEMO — sample data)" if demo else ""))
     for a in agents:
         print(f"  {a['emoji']} {a['name']}: {a['status']}")
 
