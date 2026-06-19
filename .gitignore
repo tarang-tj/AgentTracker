@@ -1,0 +1,8 @@
+# Generated dashboard output — contains live, machine-specific personal data.
+# Regenerate locally with: python3 gen-dashboard.py
+index.html
+
+# Python
+__pycache__/
+*.pyc
+.DS_Store
