@@ -37,7 +37,19 @@ python3 gen-dashboard.py --demo --out=demo.html  # render a sample board with fa
 
 📺 **See it without installing anything:** open [`demo.html`](demo.html) (raw HTML, sample data) — or [view it rendered via htmlpreview](https://htmlpreview.github.io/?https://github.com/tarang-tj/AgentTracker/blob/main/demo.html).
 
-The generator (`gen-dashboard.py`) is the whole tool. It's currently wired to two example agents (a "Career Engine" daily-brief job and a "Kalshi Engine" paper-trading picks job) by reading their launchd labels, run-logs, and output files. **Adapt the `*_state()` functions** to point at your own agents' logs and artifacts. The committed `demo.html` is generated with `--demo` (fabricated data) so the live view never exposes real machine state.
+The generator (`gen-dashboard.py`) is the whole tool. It ships wired to two example agents (a daily-brief job and a paper-trading picks job) by reading their launchd labels, run-logs, and output files. **Adapt the `*_state()` functions** to point at your own agents' logs and artifacts. The committed `demo.html` is generated with `--demo` (fabricated data) so the live view never exposes real machine state.
+
+## Architecture
+
+Your local agents (launchd/cron jobs) leave **real state on disk** — `launchctl` status, run logs, output artifacts. The generator reads that state (Python stdlib, no network, no mutation), maps it to an honest status model, and renders a self-contained HTML board.
+
+🖼️ **View / edit the diagram:** drag [`assets/architecture.excalidraw`](assets/architecture.excalidraw) onto [excalidraw.com](https://excalidraw.com), or [open the live version](https://excalidraw.com/#json=VXOE40Hn1dspP605XH4Wf,dYVPmvZTMtkwlki97z2vgg).
+
+```
+local agents ──▶ on-disk state ──reads──▶ gen-dashboard.py ──▶ index.html (live, git-ignored)
+(launchd/cron)   (launchctl,            (status model +        demo.html  (sample, public)
+                  logs, artifacts)       HTML render)          + runs at login, refresh 5m
+```
 
 ## Design principles
 
