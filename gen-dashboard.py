@@ -210,21 +210,25 @@ def recent_activity(limit: int = 12) -> list[tuple[str, str, str]]:
 COLORS = {
     "HEALTHY": "#3fb950", "STALE": "#d29922", "DEGRADED": "#d29922", "FAILED": "#f85149",
 }
+STATUS_GLYPH = {"HEALTHY": "✓", "STALE": "◷", "DEGRADED": "!", "FAILED": "✕"}
 
 
 def card(a: dict) -> str:
     color = COLORS.get(a["status"], "#8b949e")
+    pulse = " pulse" if a["status"] == "HEALTHY" else ""
+    glyph = STATUS_GLYPH.get(a["status"], "•")
     facts = "".join(
         f'<div class="row"><span class="k">{k}</span><span class="v">{v}</span></div>'
         for k, v in a["facts"]
     )
     note = f'<div class="note">{a["note"]}</div>' if a.get("note") else ""
     return f"""
-    <div class="card">
+    <div class="card" style="--c:{color};">
+      <div class="accent"></div>
       <div class="card-head">
         <span class="emoji">{a['emoji']}</span>
         <span class="title">{a['name']}</span>
-        <span class="badge" style="background:{color}1a;color:{color};border:1px solid {color}55;">{a['status']}</span>
+        <span class="badge"><span class="dot{pulse}"></span>{glyph} {a['status']}</span>
       </div>
       <div class="sched">{a['schedule']}</div>
       <div class="facts">{facts}</div>
@@ -235,9 +239,22 @@ def card(a: dict) -> str:
 
 def render(agents: list[dict], activity: list[tuple[str, str, str]]) -> str:
     cards = "".join(card(a) for a in agents)
-    n_healthy = sum(1 for a in agents if a["status"] == "HEALTHY")
+    n = len(agents)
+    counts = {s: sum(1 for a in agents if a["status"] == s) for s in ("HEALTHY", "STALE", "DEGRADED", "FAILED")}
+    n_healthy = counts["HEALTHY"]
+    pct = round(100 * n_healthy / n) if n else 0
+    # health-meter segments, ordered worst-last so green dominates visually
+    seg = "".join(
+        f'<span style="flex:{counts[s]};background:{COLORS[s]};"></span>'
+        for s in ("HEALTHY", "STALE", "DEGRADED", "FAILED") if counts[s]
+    ) or '<span style="flex:1;background:#30363d;"></span>'
+    pills = "".join(
+        f'<span class="pill" style="--p:{COLORS[s]};">{counts[s]} {s.lower()}</span>'
+        for s in ("HEALTHY", "STALE", "DEGRADED", "FAILED") if counts[s]
+    )
     timeline = "".join(
-        f'<div class="t-row"><span class="t-time">{t or "·"}</span>'
+        f'<div class="t-row"><span class="t-dot t-{src.lower()}"></span>'
+        f'<span class="t-time">{t or "·"}</span>'
         f'<span class="t-tag t-{src.lower()}">{src}</span>'
         f'<span class="t-msg">{msg}</span></div>'
         for t, src, msg in activity
@@ -250,36 +267,95 @@ def render(agents: list[dict], activity: list[tuple[str, str, str]]) -> str:
 <style>
   :root {{ color-scheme: dark; }}
   * {{ box-sizing: border-box; margin:0; padding:0; }}
-  body {{ font: 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
-         background:#0d1117; color:#c9d1d9; padding:28px; max-width:1000px; margin:0 auto; }}
-  h1 {{ font-size:22px; font-weight:650; letter-spacing:-.3px; }}
-  .sub {{ color:#8b949e; font-size:13px; margin-top:4px; }}
-  .grid {{ display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:16px; margin:24px 0; }}
-  .card {{ background:#161b22; border:1px solid #30363d; border-radius:12px; padding:18px; }}
-  .card-head {{ display:flex; align-items:center; gap:10px; margin-bottom:2px; }}
-  .emoji {{ font-size:20px; }}
-  .title {{ font-size:16px; font-weight:600; flex:1; }}
-  .badge {{ font-size:11px; font-weight:700; padding:3px 9px; border-radius:20px; letter-spacing:.5px; }}
-  .sched {{ color:#8b949e; font-size:12px; margin-bottom:12px; }}
-  .facts {{ display:flex; flex-direction:column; gap:6px; }}
-  .row {{ display:flex; justify-content:space-between; font-size:13px; border-bottom:1px solid #21262d; padding-bottom:5px; }}
-  .k {{ color:#8b949e; }} .v {{ color:#c9d1d9; font-weight:500; text-align:right; }}
-  .delivery {{ margin-top:12px; font-size:12px; color:#58a6ff; }}
-  .note {{ margin-top:8px; font-size:11px; color:#d29922; background:#d2992212; border-radius:6px; padding:6px 8px; }}
-  h2 {{ font-size:14px; color:#8b949e; text-transform:uppercase; letter-spacing:.6px; margin:8px 0 12px; }}
-  .timeline {{ background:#161b22; border:1px solid #30363d; border-radius:12px; padding:8px 16px; }}
-  .t-row {{ display:flex; gap:12px; align-items:center; padding:7px 0; border-bottom:1px solid #21262d; font-size:13px; }}
+  body {{ font: 15px/1.55 -apple-system,BlinkMacSystemFont,'Segoe UI',Inter,sans-serif;
+         color:#c9d1d9; padding:34px 28px 48px; max-width:1040px; margin:0 auto;
+         background:#0a0d12;
+         background-image:
+           radial-gradient(900px 500px at 12% -8%, rgba(63,185,80,.10), transparent 60%),
+           radial-gradient(800px 500px at 100% 0%, rgba(88,166,255,.10), transparent 55%),
+           radial-gradient(700px 600px at 50% 120%, rgba(137,87,229,.08), transparent 60%);
+         background-attachment:fixed; min-height:100vh; }}
+  @keyframes rise {{ from {{ opacity:0; transform:translateY(10px); }} to {{ opacity:1; transform:none; }} }}
+  @keyframes glow {{ 0%,100% {{ box-shadow:0 0 0 0 rgba(63,185,80,.55); }} 70% {{ box-shadow:0 0 0 6px rgba(63,185,80,0); }} }}
+
+  header {{ display:flex; align-items:flex-end; justify-content:space-between; gap:20px; flex-wrap:wrap;
+            animation:rise .5s ease both; }}
+  .brand h1 {{ font-size:26px; font-weight:700; letter-spacing:-.5px; display:flex; align-items:center; gap:10px; }}
+  .brand .sub {{ color:#8b949e; font-size:13px; margin-top:6px; }}
+
+  .gauge {{ text-align:right; }}
+  .gauge .big {{ font-size:34px; font-weight:750; line-height:1;
+                 background:linear-gradient(180deg,#e6edf3,#9aa7b4); -webkit-background-clip:text; background-clip:text; color:transparent; }}
+  .gauge .big small {{ font-size:15px; color:#6e7681; -webkit-text-fill-color:#6e7681; font-weight:600; }}
+  .gauge .lbl {{ font-size:11px; color:#8b949e; text-transform:uppercase; letter-spacing:.7px; margin-top:3px; }}
+
+  .meter {{ display:flex; height:8px; border-radius:6px; overflow:hidden; margin:18px 0 8px;
+            box-shadow:inset 0 0 0 1px #21262d; animation:rise .55s ease both; }}
+  .meter span {{ transition:flex .4s; }}
+  .pills {{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:26px; animation:rise .6s ease both; }}
+  .pill {{ font-size:11px; font-weight:650; color:#c9d1d9; padding:3px 10px 3px 8px; border-radius:20px;
+           background:color-mix(in srgb, var(--p) 14%, transparent); border:1px solid color-mix(in srgb, var(--p) 45%, transparent);
+           display:inline-flex; align-items:center; gap:6px; }}
+  .pill::before {{ content:""; width:7px; height:7px; border-radius:50%; background:var(--p); box-shadow:0 0 7px var(--p); }}
+
+  .grid {{ display:grid; grid-template-columns:repeat(auto-fit,minmax(310px,1fr)); gap:18px; margin-bottom:34px; }}
+  .card {{ position:relative; background:linear-gradient(180deg,#161b22,#12161d); border:1px solid #2a3138;
+           border-radius:16px; padding:20px 20px 18px; overflow:hidden;
+           box-shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
+           transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+           animation:rise .5s ease both; }}
+  .card:hover {{ transform:translateY(-3px); border-color:color-mix(in srgb,var(--c) 50%, #2a3138);
+                 box-shadow:0 1px 2px rgba(0,0,0,.4), 0 16px 40px -16px color-mix(in srgb,var(--c) 60%, transparent); }}
+  .card .accent {{ position:absolute; top:0; left:0; right:0; height:3px;
+                   background:linear-gradient(90deg, var(--c), color-mix(in srgb,var(--c) 25%, transparent)); }}
+  .card-head {{ display:flex; align-items:center; gap:11px; margin-bottom:3px; }}
+  .emoji {{ font-size:22px; filter:drop-shadow(0 1px 2px rgba(0,0,0,.4)); }}
+  .title {{ font-size:16.5px; font-weight:650; flex:1; letter-spacing:-.2px; }}
+  .badge {{ font-size:11px; font-weight:750; padding:4px 10px; border-radius:20px; letter-spacing:.4px;
+            display:inline-flex; align-items:center; gap:6px; white-space:nowrap;
+            color:var(--c); background:color-mix(in srgb,var(--c) 15%, transparent);
+            border:1px solid color-mix(in srgb,var(--c) 50%, transparent); }}
+  .dot {{ width:7px; height:7px; border-radius:50%; background:var(--c); }}
+  .dot.pulse {{ animation:glow 2s infinite; }}
+  .sched {{ color:#8b949e; font-size:12px; margin-bottom:14px; }}
+  .facts {{ display:flex; flex-direction:column; gap:7px; }}
+  .row {{ display:flex; justify-content:space-between; gap:12px; font-size:13px; border-bottom:1px solid #20262e; padding-bottom:6px; }}
+  .row:last-child {{ border-bottom:none; }}
+  .k {{ color:#8b949e; }} .v {{ color:#e6edf3; font-weight:550; text-align:right; }}
+  .delivery {{ margin-top:14px; font-size:12px; color:#58a6ff;
+               background:rgba(88,166,255,.08); border:1px solid rgba(88,166,255,.18); border-radius:8px; padding:7px 10px; }}
+  .note {{ margin-top:9px; font-size:11px; color:#e3b341; background:rgba(210,153,34,.10);
+           border:1px solid rgba(210,153,34,.25); border-radius:8px; padding:7px 10px; line-height:1.45; }}
+
+  h2 {{ font-size:12px; color:#8b949e; text-transform:uppercase; letter-spacing:.8px; margin:0 0 14px 2px; font-weight:700; }}
+  .timeline {{ background:linear-gradient(180deg,#161b22,#12161d); border:1px solid #2a3138; border-radius:16px;
+               padding:6px 18px; box-shadow:0 8px 24px -14px rgba(0,0,0,.6); animation:rise .65s ease both; }}
+  .t-row {{ display:flex; gap:12px; align-items:center; padding:9px 0; border-bottom:1px solid #1c2228; font-size:13px; }}
   .t-row:last-child {{ border-bottom:none; }}
-  .t-time {{ color:#6e7681; font-variant-numeric:tabular-nums; min-width:118px; font-size:12px; }}
-  .t-tag {{ font-size:10px; font-weight:700; padding:2px 7px; border-radius:5px; }}
-  .t-career {{ background:#1f6feb22; color:#58a6ff; }}
-  .t-kalshi {{ background:#8957e522; color:#bc8cff; }}
+  .t-dot {{ width:8px; height:8px; border-radius:50%; flex:none; }}
+  .t-time {{ color:#6e7681; font-variant-numeric:tabular-nums; min-width:120px; font-size:12px; }}
+  .t-tag {{ font-size:10px; font-weight:750; padding:2px 8px; border-radius:6px; letter-spacing:.3px; }}
+  .t-career, .t-dot.t-career {{ background:rgba(88,166,255,.16); color:#58a6ff; }}
+  .t-dot.t-career {{ background:#58a6ff; box-shadow:0 0 7px rgba(88,166,255,.7); }}
+  .t-kalshi, .t-dot.t-kalshi {{ background:rgba(188,140,255,.16); color:#bc8cff; }}
+  .t-dot.t-kalshi {{ background:#bc8cff; box-shadow:0 0 7px rgba(188,140,255,.7); }}
   .t-msg {{ color:#c9d1d9; flex:1; }}
-  footer {{ margin-top:24px; color:#6e7681; font-size:12px; text-align:center; }}
+  footer {{ margin-top:28px; color:#6e7681; font-size:12px; text-align:center; }}
+  footer code {{ background:#161b22; border:1px solid #2a3138; border-radius:5px; padding:1px 6px; color:#9aa7b4; }}
 </style></head>
 <body>
-  <h1>🛰️ Agent Tracker</h1>
-  <div class="sub">{n_healthy}/{len(agents)} agents healthy · auto-refresh 5 min · generated {NOW:%Y-%m-%d %H:%M}</div>
+  <header>
+    <div class="brand">
+      <h1>🛰️ Agent Tracker</h1>
+      <div class="sub">live view of {n} autonomous {'agent' if n==1 else 'agents'} · auto-refresh 5 min · generated {NOW:%Y-%m-%d %H:%M}</div>
+    </div>
+    <div class="gauge">
+      <div class="big">{pct}<small>%</small></div>
+      <div class="lbl">{n_healthy}/{n} healthy</div>
+    </div>
+  </header>
+  <div class="meter">{seg}</div>
+  <div class="pills">{pills}</div>
   <div class="grid">{cards}</div>
   <h2>Recent activity</h2>
   <div class="timeline">{timeline or '<div class="t-row"><span class="t-msg">No recent activity.</span></div>'}</div>
