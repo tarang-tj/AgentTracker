@@ -291,7 +291,7 @@ def card(a: dict) -> str:
         for k, v in a["facts"]
     )
     note = (
-        f'<div class="agent-note"><span>Diagnostic note</span> {escape(str(a["note"]))}</div>'
+        f'  <div class="agent-note"><span>Diagnostic note</span> {escape(str(a["note"]))}</div>\n'
         if a.get("note") else ""
     )
     return f"""
@@ -304,8 +304,7 @@ def card(a: dict) -> str:
   <div class="schedule"><span>Schedule</span> {escape(str(a['schedule']))}</div>
   <div class="facts">{facts}</div>
   <div class="delivery"><span>Delivery</span> {escape(str(a['delivery']))}</div>
-  {note}
-</article>"""
+{note}</article>"""
 
 
 def render(agents: list[dict], activity: list[tuple[str, str, str]]) -> str:
@@ -342,6 +341,7 @@ def render(agents: list[dict], activity: list[tuple[str, str, str]]) -> str:
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="refresh" content="300">
 <title>Jarvis — AI Companion</title>
 <style>
   :root {{

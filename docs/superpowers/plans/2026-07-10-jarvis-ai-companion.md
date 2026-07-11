@@ -35,7 +35,7 @@
 - Produces: `companion_state(agents: list[dict]) -> dict[str, str]` with keys `summary`, `priority_label`, and `priority_detail`.
 - Preserves: existing `career_state()`, `kalshi_state()`, `recent_activity()`, and status definitions.
 
-- [ ] **Step 1: Add an import helper and failing presentation-model tests**
+- [x] **Step 1: Add an import helper and failing presentation-model tests**
 
 Create `tests/test_dashboard.py` with an `importlib.util.spec_from_file_location()` loader for `gen-dashboard.py`. Add tests asserting:
 
@@ -67,13 +67,13 @@ def test_companion_state_reports_nominal_when_all_healthy():
     assert "operating normally" in result["summary"].lower()
 ```
 
-- [ ] **Step 2: Run the focused tests and confirm RED**
+- [x] **Step 2: Run the focused tests and confirm RED**
 
 Run: `python3 -m unittest tests.test_dashboard -v`
 
 Expected: errors because `greeting` and `companion_state` do not exist.
 
-- [ ] **Step 3: Implement the minimal deterministic helpers**
+- [x] **Step 3: Implement the minimal deterministic helpers**
 
 In `gen-dashboard.py`, add:
 
@@ -114,7 +114,7 @@ def companion_state(agents: list[dict]) -> dict[str, str]:
 
 Keep tie-breaking deterministic through Python's stable `min()` behavior.
 
-- [ ] **Step 4: Run focused and full gates**
+- [x] **Step 4: Run focused and full gates**
 
 Run:
 
@@ -126,7 +126,7 @@ python3 gen-dashboard.py --demo --out=/tmp/jarvis-demo.html
 
 Expected: presentation-model tests pass; demo render exits 0 and reports all four fabricated agents.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add gen-dashboard.py tests/test_dashboard.py
@@ -147,7 +147,7 @@ git commit -m "Add deterministic Jarvis companion state"
 - Produces: updated `card(a: dict) -> str`.
 - Produces: updated `render(agents, activity) -> str`, returning one offline HTML document.
 
-- [ ] **Step 1: Add failing render-contract tests**
+- [x] **Step 1: Add failing render-contract tests**
 
 Add tests that render `demo_agents()` and `demo_activity()` and assert:
 
@@ -181,13 +181,13 @@ def test_render_is_offline_responsive_and_reduced_motion_safe():
     assert "<script" not in html.lower()
 ```
 
-- [ ] **Step 2: Run focused tests and confirm RED**
+- [x] **Step 2: Run focused tests and confirm RED**
 
 Run: `python3 -m unittest tests.test_dashboard -v`
 
 Expected: render-contract assertions fail against the existing Agent Tracker UI.
 
-- [ ] **Step 3: Implement `jarvis_face()`**
+- [x] **Step 3: Implement `jarvis_face()`**
 
 Return an original inline SVG with:
 
@@ -200,7 +200,7 @@ Return an original inline SVG with:
 - `aria-hidden="true"`;
 - no text, external references, raster images, character logos, or actor likeness.
 
-- [ ] **Step 4: Replace the render composition**
+- [x] **Step 4: Replace the render composition**
 
 Update `render()` to emit:
 
@@ -213,7 +213,7 @@ Update `render()` to emit:
 
 Use the approved graphite/navy, cyan-white, amber, and failure-red system. Replace emoji-led card branding with compact agent indices and explicit status labels. Keep every existing fact, schedule, delivery field, and note visible.
 
-- [ ] **Step 5: Add bounded CSS motion and responsive behavior**
+- [x] **Step 5: Add bounded CSS motion and responsive behavior**
 
 Add:
 
@@ -227,7 +227,7 @@ Add:
 
 Do not add JavaScript, continuous render loops, external assets, broad outer glows, or auto-playing audio.
 
-- [ ] **Step 6: Run focused and full gates**
+- [x] **Step 6: Run focused and full gates**
 
 Run:
 
@@ -239,7 +239,7 @@ python3 gen-dashboard.py --demo --out=/tmp/jarvis-demo.html
 
 Expected: all tests pass; demo render exits 0.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add gen-dashboard.py tests/test_dashboard.py
@@ -262,7 +262,7 @@ git commit -m "Redesign dashboard as Jarvis AI companion"
 - Produces: committed browser screenshot `assets/dashboard.png`.
 - Produces: README usage and identity documentation.
 
-- [ ] **Step 1: Add failing public-demo safety tests**
+- [x] **Step 1: Add failing public-demo safety tests**
 
 Add a test that renders demo HTML to a temporary file and checks:
 
@@ -282,13 +282,13 @@ def test_demo_output_contains_only_public_safe_fabricated_content():
 
 Also assert the README's first heading and description identify Jarvis (AI Companion), while retaining a plain explanation that the repository tracks autonomous local agents.
 
-- [ ] **Step 2: Run focused tests and confirm RED**
+- [x] **Step 2: Run focused tests and confirm RED**
 
 Run: `python3 -m unittest tests.test_dashboard -v`
 
 Expected: README identity assertion fails before documentation is updated.
 
-- [ ] **Step 3: Update README**
+- [x] **Step 3: Update README**
 
 Change the lead identity to `Jarvis (AI Companion)` and explain:
 
@@ -300,7 +300,7 @@ Change the lead identity to `Jarvis (AI Companion)` and explain:
 
 Preserve usage commands, status definitions, architecture, adaptation guidance, and public-safety explanation.
 
-- [ ] **Step 4: Regenerate the committed demo**
+- [x] **Step 4: Regenerate the committed demo**
 
 Run:
 
@@ -310,7 +310,7 @@ python3 gen-dashboard.py --demo --out=demo.html
 
 Expected: exit 0 with `(DEMO — sample data)` and four status lines.
 
-- [ ] **Step 5: Verify in a real browser**
+- [x] **Step 5: Verify in a real browser**
 
 Open `demo.html` through a local static server and inspect at desktop and 320px widths. Verify:
 
@@ -322,11 +322,11 @@ Open `demo.html` through a local static server and inspect at desktop and 320px 
 - reduced-motion emulation disables animation;
 - DevTools reports zero failed network requests and zero console errors.
 
-- [ ] **Step 6: Capture the public screenshot**
+- [x] **Step 6: Capture the public screenshot**
 
 Capture `assets/dashboard.png` from demo mode only after animations have settled. Verify the image visually at full resolution and confirm cyan, amber, green, and red status signals are visible.
 
-- [ ] **Step 7: Run the complete gate**
+- [x] **Step 7: Run the complete gate**
 
 Run:
 
@@ -337,7 +337,7 @@ python3 gen-dashboard.py --demo --out=/tmp/jarvis-demo.html
 
 Expected: all tests pass; demo render exits 0.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add README.md demo.html assets/dashboard.png tests/test_dashboard.py
@@ -355,7 +355,7 @@ git commit -m "Publish the Jarvis AI companion demo"
 - Consumes: completed Tasks 1–3.
 - Produces: independent review verdict and fresh verification evidence.
 
-- [ ] **Step 1: Inspect the complete diff**
+- [x] **Step 1: Inspect the complete diff**
 
 Review `git diff main...HEAD` for:
 
@@ -369,7 +369,7 @@ Review `git diff main...HEAD` for:
 - mobile overflow;
 - mismatch between tests and actual browser behavior.
 
-- [ ] **Step 2: Independently rerun the full gate**
+- [x] **Step 2: Independently rerun the full gate**
 
 Run:
 
@@ -380,11 +380,11 @@ python3 gen-dashboard.py --demo --out=/tmp/jarvis-demo-review.html
 
 Expected: exit 0 for both commands.
 
-- [ ] **Step 3: Independently repeat browser verification**
+- [x] **Step 3: Independently repeat browser verification**
 
 Check desktop, 320px, reduced motion, console, network, and visual face rendering from `/tmp/jarvis-demo-review.html`.
 
-- [ ] **Step 4: Fix findings and rerun all checks**
+- [x] **Step 4: Fix findings and rerun all checks**
 
 Any finding blocks release until the complete gate and browser verification pass again.
 
@@ -396,4 +396,3 @@ Only after all checks pass:
 git push -u origin feat/jarvis-ai-companion
 gh pr create --title "Redesign AgentTracker as Jarvis AI Companion" --body-file <prepared-pr-body>
 ```
-

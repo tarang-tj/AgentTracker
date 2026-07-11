@@ -112,6 +112,19 @@ class DashboardPresentationTests(unittest.TestCase):
         self.assertIn('aria-hidden="true"', html)
         self.assertNotIn("orb", html.lower())
 
+    def test_render_refreshes_every_five_minutes(self):
+        html = dashboard.render(dashboard.demo_agents(), dashboard.demo_activity())
+
+        self.assertIn('<meta http-equiv="refresh" content="300">', html)
+
+    def test_render_contains_no_trailing_whitespace(self):
+        html = dashboard.render(dashboard.demo_agents(), dashboard.demo_activity())
+
+        self.assertEqual(
+            [line for line in html.splitlines() if line != line.rstrip()],
+            [],
+        )
+
     def test_render_preserves_status_text_and_operational_details(self):
         agents = dashboard.demo_agents()
         html = dashboard.render(agents, dashboard.demo_activity())

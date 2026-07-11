@@ -1,7 +1,7 @@
 # Jarvis (AI Companion) Dashboard Redesign
 
-**Date:** 2026-07-10  
-**Project:** AgentTracker / Career Engine  
+**Date:** 2026-07-10
+**Project:** AgentTracker / Career Engine
 **Status:** Design approved
 
 ## Goal
@@ -212,4 +212,3 @@ Required checks:
 - Automated verification passes.
 - Desktop and 320px browser checks pass.
 - README, `demo.html`, and screenshot reflect the approved Jarvis design.
-
