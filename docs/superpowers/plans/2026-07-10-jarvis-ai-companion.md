@@ -388,7 +388,7 @@ Check desktop, 320px, reduced motion, console, network, and visual face renderin
 
 Any finding blocks release until the complete gate and browser verification pass again.
 
-- [ ] **Step 5: Push branch and open PR**
+- [x] **Step 5: Push branch and open PR**
 
 Only after all checks pass:
 
