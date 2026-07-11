@@ -21,6 +21,7 @@ import sys
 import subprocess
 from datetime import date, datetime
 from glob import glob
+from html import escape
 from pathlib import Path
 
 HOME = Path.home()
@@ -250,159 +251,281 @@ def companion_state(agents: list[dict]) -> dict[str, str]:
 
 
 COLORS = {
-    "HEALTHY": "#3fb950", "STALE": "#d29922", "DEGRADED": "#d29922", "FAILED": "#f85149",
+    "HEALTHY": "#65e7f2", "STALE": "#f2b661", "DEGRADED": "#f2b661", "FAILED": "#ff6673",
 }
-STATUS_GLYPH = {"HEALTHY": "✓", "STALE": "◷", "DEGRADED": "!", "FAILED": "✕"}
+STATUS_GLYPH = {"HEALTHY": "✓", "STALE": "◷", "DEGRADED": "!", "FAILED": "×"}
+
+
+def jarvis_face() -> str:
+    """Return an original decorative SVG portrait for the companion panel."""
+    return """
+<svg class="jarvis-face" viewBox="0 0 260 330" aria-hidden="true">
+  <g class="face-grid" fill="none" stroke="currentColor" stroke-width="1">
+    <path d="M130 18V308M42 164H218M58 92H202M54 238H206"/>
+    <path d="M76 52L42 164l31 123M184 52l34 112-31 123"/>
+  </g>
+  <g class="face-contour" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+    <path class="scan-line" d="M130 27c-45 0-78 31-82 83l8 102c4 43 35 88 74 101 39-13 70-58 74-101l8-102c-4-52-37-83-82-83Z"/>
+    <path d="M72 116c15-13 34-16 51-5M188 116c-15-13-34-16-51-5"/>
+    <ellipse cx="96" cy="135" rx="22" ry="9"/>
+    <ellipse cx="164" cy="135" rx="22" ry="9"/>
+    <path d="M107 136l-11 3-11-3M153 136l11 3 11-3"/>
+    <path d="M130 118l-8 64 8 8 8-8"/>
+    <path d="M102 219c17 11 39 11 56 0M111 225c13 5 25 5 38 0"/>
+    <path d="M75 172l16 17M185 172l-16 17M87 249l21 10M173 249l-21 10"/>
+  </g>
+  <g class="diagnostics" fill="none" stroke="#f2b661" stroke-width="2" stroke-linecap="round">
+    <path d="M39 103h18l8-15M221 103h-18l-8-15"/>
+    <path d="M46 222h15l8 18M214 222h-15l-8 18"/>
+  </g>
+</svg>""".strip()
 
 
 def card(a: dict) -> str:
-    color = COLORS.get(a["status"], "#8b949e")
-    pulse = " pulse" if a["status"] == "HEALTHY" else ""
+    color = COLORS.get(a["status"], "#92a4b5")
     glyph = STATUS_GLYPH.get(a["status"], "•")
+    index = int(a.get("_index", 1))
     facts = "".join(
-        f'<div class="row"><span class="k">{k}</span><span class="v">{v}</span></div>'
+        f'<div class="fact-row"><span class="fact-key">{escape(str(k))}</span>'
+        f'<span class="fact-value">{escape(str(v))}</span></div>'
         for k, v in a["facts"]
     )
-    note = f'<div class="note">{a["note"]}</div>' if a.get("note") else ""
+    note = (
+        f'<div class="agent-note"><span>Diagnostic note</span>{escape(str(a["note"]))}</div>'
+        if a.get("note") else ""
+    )
     return f"""
-    <div class="card" style="--c:{color};">
-      <div class="accent"></div>
-      <div class="card-head">
-        <span class="emoji">{a['emoji']}</span>
-        <span class="title">{a['name']}</span>
-        <span class="badge"><span class="dot{pulse}"></span>{glyph} {a['status']}</span>
-      </div>
-      <div class="sched">{a['schedule']}</div>
-      <div class="facts">{facts}</div>
-      <div class="delivery">📲 {a['delivery']}</div>
-      {note}
-    </div>"""
+<article class="agent-module" style="--status:{color};">
+  <div class="module-heading">
+    <span class="agent-index">A-{index:02d}</span>
+    <h3>{escape(str(a['name']))}</h3>
+    <span class="status-label"><span aria-hidden="true">{glyph}</span> {escape(str(a['status']))}</span>
+  </div>
+  <div class="schedule"><span>Schedule</span>{escape(str(a['schedule']))}</div>
+  <div class="facts">{facts}</div>
+  <div class="delivery"><span>Delivery</span>{escape(str(a['delivery']))}</div>
+  {note}
+</article>"""
 
 
 def render(agents: list[dict], activity: list[tuple[str, str, str]]) -> str:
-    cards = "".join(card(a) for a in agents)
     n = len(agents)
-    counts = {s: sum(1 for a in agents if a["status"] == s) for s in ("HEALTHY", "STALE", "DEGRADED", "FAILED")}
+    counts = {
+        status: sum(1 for a in agents if a["status"] == status)
+        for status in ("HEALTHY", "STALE", "DEGRADED", "FAILED")
+    }
     n_healthy = counts["HEALTHY"]
     pct = round(100 * n_healthy / n) if n else 0
-    # health-meter segments, ordered worst-last so green dominates visually
-    seg = "".join(
-        f'<span style="flex:{counts[s]};background:{COLORS[s]};"></span>'
-        for s in ("HEALTHY", "STALE", "DEGRADED", "FAILED") if counts[s]
-    ) or '<span style="flex:1;background:#30363d;"></span>'
+    state = companion_state(agents)
+    cards = "".join(card({**agent, "_index": index}) for index, agent in enumerate(agents, 1))
+    segments = "".join(
+        f'<span style="flex:{counts[status]};background:{COLORS[status]};"></span>'
+        for status in ("HEALTHY", "STALE", "DEGRADED", "FAILED")
+        if counts[status]
+    ) or '<span style="flex:1;background:#31404e;"></span>'
     pills = "".join(
-        f'<span class="pill" style="--p:{COLORS[s]};">{counts[s]} {s.lower()}</span>'
-        for s in ("HEALTHY", "STALE", "DEGRADED", "FAILED") if counts[s]
+        f'<span class="status-pill" style="--pill:{COLORS[status]};">'
+        f'{counts[status]} {status}</span>'
+        for status in ("HEALTHY", "STALE", "DEGRADED", "FAILED")
+        if counts[status]
     )
     timeline = "".join(
-        f'<div class="t-row"><span class="t-dot t-{src.lower()}"></span>'
-        f'<span class="t-time">{t or "·"}</span>'
-        f'<span class="t-tag t-{src.lower()}">{src}</span>'
-        f'<span class="t-msg">{msg}</span></div>'
-        for t, src, msg in activity
+        f'<div class="timeline-row"><span class="timeline-mark" aria-hidden="true"></span>'
+        f'<time>{escape(str(timestamp or "·"))}</time>'
+        f'<span class="timeline-source">{escape(str(source))}</span>'
+        f'<span class="timeline-message">{escape(str(message))}</span></div>'
+        for timestamp, source, message in activity
     )
+    companion_status = "NOMINAL" if n and n_healthy == n else "ATTENTION REQUIRED" if n else "AWAITING TELEMETRY"
     return f"""<!doctype html>
-<html lang="en"><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta http-equiv="refresh" content="300">
-<title>Agent Tracker</title>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Jarvis — AI Companion</title>
 <style>
-  :root {{ color-scheme: dark; }}
-  * {{ box-sizing: border-box; margin:0; padding:0; }}
-  body {{ font: 15px/1.55 -apple-system,BlinkMacSystemFont,'Segoe UI',Inter,sans-serif;
-         color:#c9d1d9; padding:34px 28px 48px; max-width:1040px; margin:0 auto;
-         background:#0a0d12;
-         background-image:
-           radial-gradient(900px 500px at 12% -8%, rgba(63,185,80,.10), transparent 60%),
-           radial-gradient(800px 500px at 100% 0%, rgba(88,166,255,.10), transparent 55%),
-           radial-gradient(700px 600px at 50% 120%, rgba(137,87,229,.08), transparent 60%);
-         background-attachment:fixed; min-height:100vh; }}
-  @keyframes rise {{ from {{ opacity:0; transform:translateY(10px); }} to {{ opacity:1; transform:none; }} }}
-  @keyframes glow {{ 0%,100% {{ box-shadow:0 0 0 0 rgba(63,185,80,.55); }} 70% {{ box-shadow:0 0 0 6px rgba(63,185,80,0); }} }}
-
-  header {{ display:flex; align-items:flex-end; justify-content:space-between; gap:20px; flex-wrap:wrap;
-            animation:rise .5s ease both; }}
-  .brand h1 {{ font-size:26px; font-weight:700; letter-spacing:-.5px; display:flex; align-items:center; gap:10px; }}
-  .brand .sub {{ color:#8b949e; font-size:13px; margin-top:6px; }}
-
-  .gauge {{ text-align:right; }}
-  .gauge .big {{ font-size:34px; font-weight:750; line-height:1;
-                 background:linear-gradient(180deg,#e6edf3,#9aa7b4); -webkit-background-clip:text; background-clip:text; color:transparent; }}
-  .gauge .big small {{ font-size:15px; color:#6e7681; -webkit-text-fill-color:#6e7681; font-weight:600; }}
-  .gauge .lbl {{ font-size:11px; color:#8b949e; text-transform:uppercase; letter-spacing:.7px; margin-top:3px; }}
-
-  .meter {{ display:flex; height:8px; border-radius:6px; overflow:hidden; margin:18px 0 8px;
-            box-shadow:inset 0 0 0 1px #21262d; animation:rise .55s ease both; }}
-  .meter span {{ transition:flex .4s; }}
-  .pills {{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:26px; animation:rise .6s ease both; }}
-  .pill {{ font-size:11px; font-weight:650; color:#c9d1d9; padding:3px 10px 3px 8px; border-radius:20px;
-           background:color-mix(in srgb, var(--p) 14%, transparent); border:1px solid color-mix(in srgb, var(--p) 45%, transparent);
-           display:inline-flex; align-items:center; gap:6px; }}
-  .pill::before {{ content:""; width:7px; height:7px; border-radius:50%; background:var(--p); box-shadow:0 0 7px var(--p); }}
-
-  .grid {{ display:grid; grid-template-columns:repeat(auto-fit,minmax(310px,1fr)); gap:18px; margin-bottom:34px; }}
-  .card {{ position:relative; background:linear-gradient(180deg,#161b22,#12161d); border:1px solid #2a3138;
-           border-radius:16px; padding:20px 20px 18px; overflow:hidden;
-           box-shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
-           transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease;
-           animation:rise .5s ease both; }}
-  .card:hover {{ transform:translateY(-3px); border-color:color-mix(in srgb,var(--c) 50%, #2a3138);
-                 box-shadow:0 1px 2px rgba(0,0,0,.4), 0 16px 40px -16px color-mix(in srgb,var(--c) 60%, transparent); }}
-  .card .accent {{ position:absolute; top:0; left:0; right:0; height:3px;
-                   background:linear-gradient(90deg, var(--c), color-mix(in srgb,var(--c) 25%, transparent)); }}
-  .card-head {{ display:flex; align-items:center; gap:11px; margin-bottom:3px; }}
-  .emoji {{ font-size:22px; filter:drop-shadow(0 1px 2px rgba(0,0,0,.4)); }}
-  .title {{ font-size:16.5px; font-weight:650; flex:1; letter-spacing:-.2px; }}
-  .badge {{ font-size:11px; font-weight:750; padding:4px 10px; border-radius:20px; letter-spacing:.4px;
-            display:inline-flex; align-items:center; gap:6px; white-space:nowrap;
-            color:var(--c); background:color-mix(in srgb,var(--c) 15%, transparent);
-            border:1px solid color-mix(in srgb,var(--c) 50%, transparent); }}
-  .dot {{ width:7px; height:7px; border-radius:50%; background:var(--c); }}
-  .dot.pulse {{ animation:glow 2s infinite; }}
-  .sched {{ color:#8b949e; font-size:12px; margin-bottom:14px; }}
-  .facts {{ display:flex; flex-direction:column; gap:7px; }}
-  .row {{ display:flex; justify-content:space-between; gap:12px; font-size:13px; border-bottom:1px solid #20262e; padding-bottom:6px; }}
-  .row:last-child {{ border-bottom:none; }}
-  .k {{ color:#8b949e; }} .v {{ color:#e6edf3; font-weight:550; text-align:right; }}
-  .delivery {{ margin-top:14px; font-size:12px; color:#58a6ff;
-               background:rgba(88,166,255,.08); border:1px solid rgba(88,166,255,.18); border-radius:8px; padding:7px 10px; }}
-  .note {{ margin-top:9px; font-size:11px; color:#e3b341; background:rgba(210,153,34,.10);
-           border:1px solid rgba(210,153,34,.25); border-radius:8px; padding:7px 10px; line-height:1.45; }}
-
-  h2 {{ font-size:12px; color:#8b949e; text-transform:uppercase; letter-spacing:.8px; margin:0 0 14px 2px; font-weight:700; }}
-  .timeline {{ background:linear-gradient(180deg,#161b22,#12161d); border:1px solid #2a3138; border-radius:16px;
-               padding:6px 18px; box-shadow:0 8px 24px -14px rgba(0,0,0,.6); animation:rise .65s ease both; }}
-  .t-row {{ display:flex; gap:12px; align-items:center; padding:9px 0; border-bottom:1px solid #1c2228; font-size:13px; }}
-  .t-row:last-child {{ border-bottom:none; }}
-  .t-dot {{ width:8px; height:8px; border-radius:50%; flex:none; }}
-  .t-time {{ color:#6e7681; font-variant-numeric:tabular-nums; min-width:120px; font-size:12px; }}
-  .t-tag {{ font-size:10px; font-weight:750; padding:2px 8px; border-radius:6px; letter-spacing:.3px; }}
-  .t-career, .t-dot.t-career {{ background:rgba(88,166,255,.16); color:#58a6ff; }}
-  .t-dot.t-career {{ background:#58a6ff; box-shadow:0 0 7px rgba(88,166,255,.7); }}
-  .t-kalshi, .t-dot.t-kalshi {{ background:rgba(188,140,255,.16); color:#bc8cff; }}
-  .t-dot.t-kalshi {{ background:#bc8cff; box-shadow:0 0 7px rgba(188,140,255,.7); }}
-  .t-msg {{ color:#c9d1d9; flex:1; }}
-  footer {{ margin-top:28px; color:#6e7681; font-size:12px; text-align:center; }}
-  footer code {{ background:#161b22; border:1px solid #2a3138; border-radius:5px; padding:1px 6px; color:#9aa7b4; }}
-</style></head>
+  :root {{
+    color-scheme: dark;
+    --graphite:#080d13;
+    --navy:#0d1722;
+    --panel:#111e2a;
+    --line:#263d4d;
+    --cyan:#65e7f2;
+    --white:#eafcff;
+    --muted:#92a4b5;
+    --amber:#f2b661;
+    --failure:#ff6673;
+  }}
+  * {{ box-sizing:border-box; margin:0; padding:0; }}
+  html, body {{ min-width:0; }}
+  body {{
+    min-height:100vh;
+    overflow-x: hidden;
+    color:var(--white);
+    background:
+      linear-gradient(rgba(101,231,242,.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(101,231,242,.025) 1px, transparent 1px),
+      radial-gradient(circle at 50% -20%, #173043 0, transparent 52%),
+      var(--graphite);
+    background-size:32px 32px,32px 32px,auto,auto;
+    font:16px/1.55 "Avenir Next","Trebuchet MS",system-ui,sans-serif;
+  }}
+  .shell {{ width:min(1180px,100%); margin:0 auto; padding:24px; animation:enter .7s ease-out both; }}
+  @keyframes enter {{
+    from {{ opacity:0; transform:translateY(12px); }}
+    to {{ opacity:1; transform:translateY(0); }}
+  }}
+  @keyframes contour-scan {{
+    from {{ stroke-dashoffset:0; opacity:.55; }}
+    to {{ stroke-dashoffset:-120; opacity:1; }}
+  }}
+  header {{
+    display:flex; justify-content:space-between; align-items:flex-end; gap:24px;
+    padding:10px 0 18px; border-bottom:1px solid var(--line);
+  }}
+  .brand-line {{ display:flex; align-items:baseline; gap:14px; flex-wrap:wrap; }}
+  .wordmark {{ color:var(--cyan); font:700 clamp(1.5rem,5vw,2.3rem)/1 "Avenir Next",sans-serif; letter-spacing:.24em; }}
+  .product {{ color:var(--white); font-size:.82rem; letter-spacing:.16em; text-transform:uppercase; }}
+  .generated {{ color:var(--muted); font:500 .72rem/1.4 ui-monospace,SFMono-Regular,Menlo,monospace; text-align:right; }}
+  .generated strong {{ display:block; color:var(--cyan); letter-spacing:.11em; text-transform:uppercase; }}
+  .hud {{ display:grid; grid-template-columns:minmax(0,.82fr) minmax(0,1.35fr); gap:18px; padding-top:18px; }}
+  .identity-panel,.operations-panel,.intelligence,.agent-module {{ min-width:0; }}
+  .identity-panel,.operations-panel,.intelligence {{
+    position:relative; border:1px solid var(--line); background:rgba(13,23,34,.9);
+    box-shadow:inset 0 1px rgba(234,252,255,.03);
+  }}
+  .identity-panel {{ padding:22px; overflow:hidden; }}
+  .identity-panel::before,.operations-panel::before,.intelligence::before {{
+    content:""; position:absolute; left:-1px; top:-1px; width:42px; height:2px; background:var(--cyan);
+  }}
+  .face-frame {{
+    display:grid; place-items:center; min-height:355px; margin:-8px 0 2px;
+    background:radial-gradient(ellipse at center, rgba(101,231,242,.08), transparent 66%);
+  }}
+  .jarvis-face {{ width:min(260px,86%); height:auto; color:var(--cyan); }}
+  .face-grid {{ opacity:.13; }}
+  .face-contour {{ stroke-width:1.6; }}
+  .scan-line {{ stroke-dasharray:14 8; animation:contour-scan 7s ease-in-out 2 alternate; }}
+  .eyebrow {{ color:var(--muted); font:600 .7rem/1.3 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing:.14em; text-transform:uppercase; }}
+  .identity-panel h1 {{ margin:8px 0 10px; font-size:clamp(1.55rem,4vw,2.45rem); line-height:1.08; letter-spacing:-.035em; }}
+  .summary {{ color:#c2d1d9; max-width:44ch; }}
+  .companion-status {{
+    display:flex; justify-content:space-between; gap:12px; margin-top:20px; padding-top:14px;
+    border-top:1px solid var(--line); color:var(--muted); font-size:.75rem; text-transform:uppercase; letter-spacing:.1em;
+  }}
+  .companion-status strong {{ color:var(--amber); font-size:.7rem; }}
+  .operations-panel {{ padding:22px; }}
+  .section-kicker {{ color:var(--cyan); font:600 .68rem/1.3 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing:.16em; text-transform:uppercase; }}
+  .readiness-head {{ display:flex; justify-content:space-between; align-items:end; gap:18px; margin:7px 0 16px; }}
+  h2 {{ font-size:1.35rem; letter-spacing:-.02em; }}
+  .readiness-score {{ color:var(--white); font-size:2.3rem; font-weight:650; line-height:1; }}
+  .readiness-score small {{ color:var(--muted); font-size:.8rem; }}
+  .meter {{ display:flex; height:4px; overflow:hidden; background:#263744; }}
+  .status-pills {{ display:flex; flex-wrap:wrap; gap:7px; margin:11px 0 18px; }}
+  .status-pill {{
+    display:inline-flex; align-items:center; gap:6px; color:var(--pill);
+    border:1px solid color-mix(in srgb,var(--pill) 48%,transparent);
+    background:color-mix(in srgb,var(--pill) 8%,transparent);
+    padding:4px 8px; font:700 .65rem/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing:.06em;
+  }}
+  .status-pill::before {{ content:""; width:5px; height:5px; background:var(--pill); }}
+  .priority {{
+    display:grid; grid-template-columns:auto 1fr; gap:4px 14px; margin-bottom:18px; padding:13px 14px;
+    border-left:2px solid var(--amber); background:rgba(242,182,97,.07);
+  }}
+  .priority span {{ grid-row:1 / 3; color:var(--amber); font:.68rem/1.4 ui-monospace,SFMono-Regular,Menlo,monospace; text-transform:uppercase; letter-spacing:.1em; }}
+  .priority strong {{ font-size:.9rem; }}
+  .priority p {{ color:var(--muted); font-size:.78rem; }}
+  .agent-grid {{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }}
+  .agent-module {{ border:1px solid #263b49; background:#0b141d; padding:14px; }}
+  .agent-module {{ border-top-color:var(--status); }}
+  .module-heading {{ display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:9px; }}
+  .agent-index {{ color:var(--status); font:700 .62rem/1 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing:.05em; }}
+  .module-heading h3 {{ font-size:.9rem; line-height:1.25; }}
+  .status-label {{ color:var(--status); font:700 .58rem/1 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing:.05em; white-space:nowrap; }}
+  .schedule,.delivery {{
+    display:flex; justify-content:space-between; gap:10px; color:#c3d0d8; font-size:.7rem;
+    overflow-wrap:anywhere;
+  }}
+  .schedule {{ margin:9px 0 11px; padding-bottom:9px; border-bottom:1px solid #1c2c37; }}
+  .schedule span,.delivery span,.agent-note span {{ color:var(--muted); text-transform:uppercase; letter-spacing:.08em; }}
+  .facts {{ display:grid; gap:5px; }}
+  .fact-row {{ display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.25fr); gap:9px; font-size:.68rem; }}
+  .fact-key {{ color:var(--muted); }}
+  .fact-value {{ color:var(--white); text-align:right; overflow-wrap:anywhere; }}
+  .delivery {{ margin-top:11px; padding-top:9px; border-top:1px solid #1c2c37; color:var(--cyan); }}
+  .agent-note {{ margin-top:9px; padding:8px; color:var(--amber); background:rgba(242,182,97,.07); font-size:.66rem; overflow-wrap:anywhere; }}
+  .agent-note span {{ display:block; margin-bottom:3px; font-size:.58rem; }}
+  .intelligence {{ grid-column:1 / -1; padding:20px 22px; }}
+  .intelligence h2 {{ margin:5px 0 12px; }}
+  .timeline {{ border-top:1px solid var(--line); }}
+  .timeline-row {{
+    display:grid; grid-template-columns:8px 126px 72px minmax(0,1fr); gap:11px; align-items:center;
+    padding:9px 0; border-bottom:1px solid #1b2b36; font-size:.76rem;
+  }}
+  .timeline-mark {{ width:5px; height:5px; background:var(--cyan); }}
+  .timeline-row time {{ color:var(--muted); font:500 .68rem/1.4 ui-monospace,SFMono-Regular,Menlo,monospace; }}
+  .timeline-source {{ color:var(--cyan); font-size:.66rem; text-transform:uppercase; letter-spacing:.08em; }}
+  .timeline-message {{ color:#cad7de; overflow-wrap:anywhere; }}
+  footer {{ color:#758998; padding:20px 4px 0; text-align:center; font-size:.68rem; letter-spacing:.03em; }}
+  footer code {{ color:var(--cyan); }}
+  @media (max-width: 760px) {{
+    .shell {{ padding:14px 12px 24px; }}
+    header {{ align-items:flex-start; }}
+    .generated {{ text-align:left; }}
+    .hud {{ grid-template-columns:minmax(0,1fr); }}
+    .intelligence {{ grid-column:auto; }}
+    .face-frame {{ min-height:300px; }}
+    .agent-grid {{ grid-template-columns:minmax(0,1fr); }}
+    .timeline-row {{ grid-template-columns:8px 1fr; gap:5px 9px; }}
+    .timeline-row time,.timeline-source,.timeline-message {{ grid-column:2; }}
+    .module-heading {{ grid-template-columns:auto minmax(0,1fr); }}
+    .status-label {{ grid-column:1 / -1; }}
+  }}
+  @media (prefers-reduced-motion: reduce) {{
+    *, *::before, *::after {{ animation:none !important; transition:none !important; scroll-behavior:auto !important; }}
+  }}
+</style>
+</head>
 <body>
+<div class="shell">
   <header>
-    <div class="brand">
-      <h1>🛰️ Agent Tracker</h1>
-      <div class="sub">live view of {n} autonomous {'agent' if n==1 else 'agents'} · auto-refresh 5 min · generated {NOW:%Y-%m-%d %H:%M}</div>
-    </div>
-    <div class="gauge">
-      <div class="big">{pct}<small>%</small></div>
-      <div class="lbl">{n_healthy}/{n} healthy</div>
-    </div>
+    <div class="brand-line"><span class="wordmark">JARVIS</span><span class="product">AI Companion</span></div>
+    <div class="generated"><strong>Local systems console</strong>Generated {NOW:%Y-%m-%d %H:%M}</div>
   </header>
-  <div class="meter">{seg}</div>
-  <div class="pills">{pills}</div>
-  <div class="grid">{cards}</div>
-  <h2>Recent activity</h2>
-  <div class="timeline">{timeline or '<div class="t-row"><span class="t-msg">No recent activity.</span></div>'}</div>
-  <footer>Read-only view of real on-disk state (launchd · run-log · output artifacts). Regenerate: <code>engine dashboard</code></footer>
-</body></html>"""
+  <main class="hud">
+    <section class="identity-panel" aria-labelledby="companion-heading">
+      <div class="face-frame">{jarvis_face()}</div>
+      <p class="eyebrow">Companion link / {n:02d} systems</p>
+      <h1 id="companion-heading">{greeting(NOW)}.</h1>
+      <p class="summary">{escape(state['summary'])}</p>
+      <div class="companion-status"><span>Companion status</span><strong>{companion_status}</strong></div>
+    </section>
+    <section class="operations-panel" aria-labelledby="readiness-heading">
+      <p class="section-kicker">Operational matrix</p>
+      <div class="readiness-head">
+        <h2 id="readiness-heading">System readiness</h2>
+        <div class="readiness-score">{pct}<small>%</small></div>
+      </div>
+      <div class="meter">{segments}</div>
+      <div class="status-pills">{pills}</div>
+      <div class="priority">
+        <span>Priority</span>
+        <strong>{escape(state['priority_label'])}</strong>
+        <p>{escape(state['priority_detail'])}</p>
+      </div>
+      <div class="agent-grid">{cards}</div>
+    </section>
+    <section class="intelligence" aria-labelledby="intelligence-heading">
+      <p class="section-kicker">On-disk signal log</p>
+      <h2 id="intelligence-heading">Recent intelligence</h2>
+      <div class="timeline">{timeline or '<div class="timeline-row"><span class="timeline-mark" aria-hidden="true"></span><span class="timeline-message">No recent activity.</span></div>'}</div>
+    </section>
+  </main>
+  <footer>Read-only provenance: launchd · run-log · output artifacts · regenerate with <code>engine dashboard</code></footer>
+</div>
+</body>
+</html>"""
 
 
 def demo_agents() -> list[dict]:
