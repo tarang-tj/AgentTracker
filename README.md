@@ -1,12 +1,12 @@
-# 🛰️ AgentTracker
+# Jarvis (AI Companion)
 
-A lightweight, dependency-free **visual dashboard for tracking autonomous local agents** — the kind of always-on scripts you schedule with `launchd`/`cron` that quietly do work for you each day.
+Jarvis is a lightweight, dependency-free AI companion dashboard that **tracks autonomous local agents** — the kind of always-on scripts you schedule with `launchd`/`cron` that quietly do work for you each day.
 
-![AgentTracker dashboard](assets/dashboard.png)
+![Jarvis AI Companion dashboard](assets/dashboard.png)
 
-It reads each agent's **real on-disk state** (scheduler status, run logs, output artifacts) and renders a self-contained dark-theme HTML dashboard. No servers, no frameworks, no network calls — just Python stdlib and a single HTML file you open in a browser.
+AgentTracker is the dependency-free engine beneath Jarvis. It reads each agent's **real on-disk state** (scheduler status, run logs, output artifacts) and renders a self-contained dark-theme HTML dashboard. The face and companion summary are deterministic presentation of those signals, not a generative model. The dashboard is read-only: no servers, no frameworks, no network calls, and no mutation — just Python stdlib and a single HTML file you open in a browser.
 
-> *Screenshot above is the `--demo` render (sample data). Your real dashboard never leaves your machine.*
+> *The screenshot and committed `demo.html` are `--demo` renders made from fabricated sample data. Your live `index.html` never leaves your machine.*
 
 ## Why
 

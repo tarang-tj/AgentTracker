@@ -6,6 +6,7 @@ from pathlib import Path
 
 
 MODULE_PATH = Path(__file__).resolve().parents[1] / "gen-dashboard.py"
+README_PATH = MODULE_PATH.parent / "README.md"
 SPEC = importlib.util.spec_from_file_location("dashboard", MODULE_PATH)
 dashboard = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(dashboard)
@@ -32,6 +33,26 @@ class DashboardPresentationTests(unittest.TestCase):
             dashboard.greeting(datetime(2026, 7, 10, 20)),
             "Good evening",
         )
+
+    def test_demo_output_contains_only_public_safe_fabricated_content(self):
+        html = dashboard.render(dashboard.demo_agents(), dashboard.demo_activity())
+        forbidden = (
+            str(Path.home()),
+            "Documents/Obsidian Vault",
+            ".career-engine",
+            "kalshi-engine",
+            "TJ Apple ID",
+        )
+
+        for value in forbidden:
+            self.assertNotIn(value, html)
+
+    def test_readme_identifies_jarvis_and_explains_agent_tracking(self):
+        readme = README_PATH.read_text()
+        lines = readme.splitlines()
+
+        self.assertEqual(lines[0], "# Jarvis (AI Companion)")
+        self.assertIn("tracks autonomous local agents", readme.lower())
 
     def test_companion_state_prioritizes_first_highest_severity_agent(self):
         agents = [
