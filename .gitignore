@@ -11,3 +11,6 @@ __pycache__/
 startup.log
 startup.out
 startup.err
+
+# Local visual-design brainstorming artifacts
+.superpowers/
