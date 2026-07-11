@@ -1,4 +1,5 @@
 import importlib.util
+import re
 import unittest
 from datetime import datetime
 from pathlib import Path
@@ -11,6 +12,13 @@ SPEC.loader.exec_module(dashboard)
 
 
 class DashboardPresentationTests(unittest.TestCase):
+    def assert_rem_font_size_at_least(self, html, selector, minimum):
+        rule = re.search(rf"{re.escape(selector)}\s*\{{([^}}]+)\}}", html, re.S)
+        self.assertIsNotNone(rule, f"missing CSS rule for {selector}")
+        size = re.search(r"font-size:\s*([0-9.]+)rem", rule.group(1))
+        self.assertIsNotNone(size, f"missing explicit rem font-size for {selector}")
+        self.assertGreaterEqual(float(size.group(1)), minimum)
+
     def test_greeting_uses_local_hour(self):
         self.assertEqual(
             dashboard.greeting(datetime(2026, 7, 10, 9)),
@@ -77,24 +85,64 @@ class DashboardPresentationTests(unittest.TestCase):
 
     def test_render_is_offline_responsive_and_reduced_motion_safe(self):
         html = dashboard.render(dashboard.demo_agents(), dashboard.demo_activity())
+        lower = html.lower()
 
         self.assertIn("@media (max-width: 760px)", html)
         self.assertIn("@media (prefers-reduced-motion: reduce)", html)
         self.assertIn("overflow-x:hidden", html.replace(" ", ""))
-        self.assertNotIn("https://", html)
-        self.assertNotIn("http://", html)
-        self.assertNotIn("<script", html.lower())
+        self.assertNotIn("https://", lower)
+        self.assertNotIn("http://", lower)
+        self.assertNotIn("<script", lower)
+        self.assertNotRegex(lower, r"""(?:src|href)\s*=\s*["']//""")
+        self.assertNotRegex(lower, r"@import\b")
+        self.assertNotRegex(lower, r"""url\(\s*["']?(?:https?:)?//""")
+        self.assertNotRegex(lower, r"<(?:img|image)\b")
+        self.assertNotRegex(lower, r"<use\b|(?:href|xlink:href)\s*=")
+
+    def test_operational_typography_is_readable_at_desktop_and_mobile_sizes(self):
+        html = dashboard.render(dashboard.demo_agents(), dashboard.demo_activity())
+
+        for selector, minimum in (
+            (".agent-index", 0.75),
+            (".status-label", 0.75),
+            (".fact-row", 0.8),
+            (".agent-note", 0.78),
+        ):
+            self.assert_rem_font_size_at_least(html, selector, minimum)
+        self.assertRegex(
+            html,
+            r"@media \(max-width: 760px\)[\s\S]*?"
+            r"\.agent-index,\.status-label,\.fact-row,\.agent-note\s*"
+            r"\{[^}]*font-size:\s*\.8rem",
+        )
+
+    def test_operational_labels_and_values_have_accessible_text_separation(self):
+        html = dashboard.render(dashboard.demo_agents(), dashboard.demo_activity())
+        text = " ".join(re.sub(r"<[^>]+>", "", html).split())
+
+        self.assertIn("Schedule daily 07:30", text)
+        self.assertIn("Brief job loaded", text)
+        self.assertIn("loaded Liveness job", text)
+        self.assertIn("Delivery iMessage → primary handle", text)
+        self.assertIn(
+            "Diagnostic note PAPER ONLY — edge not yet proven",
+            text,
+        )
+        self.assertIn("Kalshi ⚠️ send failed (delivery)", text)
+        self.assertIn("send failed (delivery) 2026-06-19 07:30", text)
 
     def test_jarvis_face_is_an_inline_decorative_human_face(self):
         svg = dashboard.jarvis_face()
+        lower = svg.lower()
 
         self.assertIn('class="jarvis-face"', svg)
         self.assertIn('viewBox="0 0 260 330"', svg)
         self.assertIn('aria-hidden="true"', svg)
         self.assertIn("<path", svg)
         self.assertIn("<ellipse", svg)
-        self.assertNotIn("<text", svg)
-        self.assertNotIn("href=", svg)
+        self.assertNotIn("<text", lower)
+        self.assertNotRegex(lower, r"<(?:img|image)\b")
+        self.assertNotRegex(lower, r"<use\b|(?:href|xlink:href)\s*=")
 
 
 if __name__ == "__main__":

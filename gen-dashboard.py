@@ -285,13 +285,13 @@ def card(a: dict) -> str:
     color = COLORS.get(a["status"], "#92a4b5")
     glyph = STATUS_GLYPH.get(a["status"], "•")
     index = int(a.get("_index", 1))
-    facts = "".join(
+    facts = "\n".join(
         f'<div class="fact-row"><span class="fact-key">{escape(str(k))}</span>'
-        f'<span class="fact-value">{escape(str(v))}</span></div>'
+        f' <span class="fact-value">{escape(str(v))}</span></div>'
         for k, v in a["facts"]
     )
     note = (
-        f'<div class="agent-note"><span>Diagnostic note</span>{escape(str(a["note"]))}</div>'
+        f'<div class="agent-note"><span>Diagnostic note</span> {escape(str(a["note"]))}</div>'
         if a.get("note") else ""
     )
     return f"""
@@ -301,9 +301,9 @@ def card(a: dict) -> str:
     <h3>{escape(str(a['name']))}</h3>
     <span class="status-label"><span aria-hidden="true">{glyph}</span> {escape(str(a['status']))}</span>
   </div>
-  <div class="schedule"><span>Schedule</span>{escape(str(a['schedule']))}</div>
+  <div class="schedule"><span>Schedule</span> {escape(str(a['schedule']))}</div>
   <div class="facts">{facts}</div>
-  <div class="delivery"><span>Delivery</span>{escape(str(a['delivery']))}</div>
+  <div class="delivery"><span>Delivery</span> {escape(str(a['delivery']))}</div>
   {note}
 </article>"""
 
@@ -317,23 +317,23 @@ def render(agents: list[dict], activity: list[tuple[str, str, str]]) -> str:
     n_healthy = counts["HEALTHY"]
     pct = round(100 * n_healthy / n) if n else 0
     state = companion_state(agents)
-    cards = "".join(card({**agent, "_index": index}) for index, agent in enumerate(agents, 1))
+    cards = "\n".join(card({**agent, "_index": index}) for index, agent in enumerate(agents, 1))
     segments = "".join(
         f'<span style="flex:{counts[status]};background:{COLORS[status]};"></span>'
         for status in ("HEALTHY", "STALE", "DEGRADED", "FAILED")
         if counts[status]
     ) or '<span style="flex:1;background:#31404e;"></span>'
-    pills = "".join(
+    pills = " ".join(
         f'<span class="status-pill" style="--pill:{COLORS[status]};">'
         f'{counts[status]} {status}</span>'
         for status in ("HEALTHY", "STALE", "DEGRADED", "FAILED")
         if counts[status]
     )
-    timeline = "".join(
+    timeline = "\n".join(
         f'<div class="timeline-row"><span class="timeline-mark" aria-hidden="true"></span>'
-        f'<time>{escape(str(timestamp or "·"))}</time>'
-        f'<span class="timeline-source">{escape(str(source))}</span>'
-        f'<span class="timeline-message">{escape(str(message))}</span></div>'
+        f' <time>{escape(str(timestamp or "·"))}</time>'
+        f' <span class="timeline-source">{escape(str(source))}</span>'
+        f' <span class="timeline-message">{escape(str(message))}</span></div>'
         for timestamp, source, message in activity
     )
     companion_status = "NOMINAL" if n and n_healthy == n else "ATTENTION REQUIRED" if n else "AWAITING TELEMETRY"
@@ -413,7 +413,7 @@ def render(agents: list[dict], activity: list[tuple[str, str, str]]) -> str:
     display:flex; justify-content:space-between; gap:12px; margin-top:20px; padding-top:14px;
     border-top:1px solid var(--line); color:var(--muted); font-size:.75rem; text-transform:uppercase; letter-spacing:.1em;
   }}
-  .companion-status strong {{ color:var(--amber); font-size:.7rem; }}
+  .companion-status strong {{ color:var(--amber); font-size:.75rem; }}
   .operations-panel {{ padding:22px; }}
   .section-kicker {{ color:var(--cyan); font:600 .68rem/1.3 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing:.16em; text-transform:uppercase; }}
   .readiness-head {{ display:flex; justify-content:space-between; align-items:end; gap:18px; margin:7px 0 16px; }}
@@ -426,7 +426,7 @@ def render(agents: list[dict], activity: list[tuple[str, str, str]]) -> str:
     display:inline-flex; align-items:center; gap:6px; color:var(--pill);
     border:1px solid color-mix(in srgb,var(--pill) 48%,transparent);
     background:color-mix(in srgb,var(--pill) 8%,transparent);
-    padding:4px 8px; font:700 .65rem/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing:.06em;
+    padding:4px 8px; font:700 .75rem/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing:.06em;
   }}
   .status-pill::before {{ content:""; width:5px; height:5px; background:var(--pill); }}
   .priority {{
@@ -440,22 +440,22 @@ def render(agents: list[dict], activity: list[tuple[str, str, str]]) -> str:
   .agent-module {{ border:1px solid #263b49; background:#0b141d; padding:14px; }}
   .agent-module {{ border-top-color:var(--status); }}
   .module-heading {{ display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:9px; }}
-  .agent-index {{ color:var(--status); font:700 .62rem/1 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing:.05em; }}
+  .agent-index {{ color:var(--status); font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.75rem; font-weight:700; line-height:1.2; letter-spacing:.05em; }}
   .module-heading h3 {{ font-size:.9rem; line-height:1.25; }}
-  .status-label {{ color:var(--status); font:700 .58rem/1 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing:.05em; white-space:nowrap; }}
+  .status-label {{ color:var(--status); font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.75rem; font-weight:700; line-height:1.2; letter-spacing:.05em; white-space:nowrap; }}
   .schedule,.delivery {{
-    display:flex; justify-content:space-between; gap:10px; color:#c3d0d8; font-size:.7rem;
+    display:flex; justify-content:space-between; gap:10px; color:#c3d0d8; font-size:.78rem;
     overflow-wrap:anywhere;
   }}
   .schedule {{ margin:9px 0 11px; padding-bottom:9px; border-bottom:1px solid #1c2c37; }}
   .schedule span,.delivery span,.agent-note span {{ color:var(--muted); text-transform:uppercase; letter-spacing:.08em; }}
   .facts {{ display:grid; gap:5px; }}
-  .fact-row {{ display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.25fr); gap:9px; font-size:.68rem; }}
+  .fact-row {{ display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.25fr); gap:9px; font-size:.8rem; }}
   .fact-key {{ color:var(--muted); }}
   .fact-value {{ color:var(--white); text-align:right; overflow-wrap:anywhere; }}
   .delivery {{ margin-top:11px; padding-top:9px; border-top:1px solid #1c2c37; color:var(--cyan); }}
-  .agent-note {{ margin-top:9px; padding:8px; color:var(--amber); background:rgba(242,182,97,.07); font-size:.66rem; overflow-wrap:anywhere; }}
-  .agent-note span {{ display:block; margin-bottom:3px; font-size:.58rem; }}
+  .agent-note {{ margin-top:9px; padding:8px; color:var(--amber); background:rgba(242,182,97,.07); font-size:.78rem; overflow-wrap:anywhere; }}
+  .agent-note span {{ display:block; margin-bottom:3px; font-size:.75rem; }}
   .intelligence {{ grid-column:1 / -1; padding:20px 22px; }}
   .intelligence h2 {{ margin:5px 0 12px; }}
   .timeline {{ border-top:1px solid var(--line); }}
@@ -481,6 +481,8 @@ def render(agents: list[dict], activity: list[tuple[str, str, str]]) -> str:
     .timeline-row time,.timeline-source,.timeline-message {{ grid-column:2; }}
     .module-heading {{ grid-template-columns:auto minmax(0,1fr); }}
     .status-label {{ grid-column:1 / -1; }}
+    .agent-index,.status-label,.fact-row,.agent-note {{ font-size:.8rem; }}
+    .status-pill,.schedule,.delivery {{ font-size:.8rem; }}
   }}
   @media (prefers-reduced-motion: reduce) {{
     *, *::before, *::after {{ animation:none !important; transition:none !important; scroll-behavior:auto !important; }}
@@ -490,8 +492,8 @@ def render(agents: list[dict], activity: list[tuple[str, str, str]]) -> str:
 <body>
 <div class="shell">
   <header>
-    <div class="brand-line"><span class="wordmark">JARVIS</span><span class="product">AI Companion</span></div>
-    <div class="generated"><strong>Local systems console</strong>Generated {NOW:%Y-%m-%d %H:%M}</div>
+    <div class="brand-line"><span class="wordmark">JARVIS</span> <span class="product">AI Companion</span></div>
+    <div class="generated"><strong>Local systems console</strong> Generated {NOW:%Y-%m-%d %H:%M}</div>
   </header>
   <main class="hud">
     <section class="identity-panel" aria-labelledby="companion-heading">
@@ -499,7 +501,7 @@ def render(agents: list[dict], activity: list[tuple[str, str, str]]) -> str:
       <p class="eyebrow">Companion link / {n:02d} systems</p>
       <h1 id="companion-heading">{greeting(NOW)}.</h1>
       <p class="summary">{escape(state['summary'])}</p>
-      <div class="companion-status"><span>Companion status</span><strong>{companion_status}</strong></div>
+      <div class="companion-status"><span>Companion status</span> <strong>{companion_status}</strong></div>
     </section>
     <section class="operations-panel" aria-labelledby="readiness-heading">
       <p class="section-kicker">Operational matrix</p>
