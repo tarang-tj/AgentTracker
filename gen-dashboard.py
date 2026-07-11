@@ -207,6 +207,48 @@ def recent_activity(limit: int = 12) -> list[tuple[str, str, str]]:
 
 
 # ---------------------------------------------------------------- render
+SEVERITY = {"FAILED": 0, "DEGRADED": 1, "STALE": 2, "HEALTHY": 3}
+
+
+def greeting(now: datetime) -> str:
+    if now.hour < 12:
+        return "Good morning"
+    if now.hour < 18:
+        return "Good afternoon"
+    return "Good evening"
+
+
+def companion_state(agents: list[dict]) -> dict[str, str]:
+    if not agents:
+        return {
+            "summary": "No agent telemetry is available.",
+            "priority_label": "Awaiting telemetry",
+            "priority_detail": "No systems were discovered.",
+        }
+    healthy = sum(a["status"] == "HEALTHY" for a in agents)
+    if healthy == len(agents):
+        return {
+            "summary": "All systems are operating normally.",
+            "priority_label": "Systems nominal",
+            "priority_detail": "No intervention is required.",
+        }
+    priority = min(agents, key=lambda a: SEVERITY.get(a["status"], 4))
+    noun = "system" if healthy == 1 else "systems"
+    degraded = sum(a["status"] == "DEGRADED" for a in agents)
+    degraded_summary = ""
+    if degraded:
+        degraded_noun = "system" if degraded == 1 else "systems"
+        degraded_summary = f" {degraded} {degraded_noun} degraded."
+    return {
+        "summary": (
+            f"{healthy} {noun} operating normally."
+            f"{degraded_summary} {priority['name']} needs attention."
+        ),
+        "priority_label": priority["name"],
+        "priority_detail": f"Observed state: {priority['status'].lower()}.",
+    }
+
+
 COLORS = {
     "HEALTHY": "#3fb950", "STALE": "#d29922", "DEGRADED": "#d29922", "FAILED": "#f85149",
 }
