@@ -251,7 +251,7 @@ def companion_state(agents: list[dict]) -> dict[str, str]:
 
 
 COLORS = {
-    "HEALTHY": "#65e7f2", "STALE": "#f2b661", "DEGRADED": "#f2b661", "FAILED": "#ff6673",
+    "HEALTHY": "#72c98b", "STALE": "#f2b661", "DEGRADED": "#f2b661", "FAILED": "#ff6673",
 }
 STATUS_GLYPH = {"HEALTHY": "✓", "STALE": "◷", "DEGRADED": "!", "FAILED": "×"}
 

@@ -20,6 +20,32 @@ class DashboardPresentationTests(unittest.TestCase):
         self.assertIsNotNone(size, f"missing explicit rem font-size for {selector}")
         self.assertGreaterEqual(float(size.group(1)), minimum)
 
+    def test_status_palette_uses_distinct_semantic_colors(self):
+        primary_cyan = "#65e7f2"
+        expected = {
+            "HEALTHY": "#72c98b",
+            "STALE": "#f2b661",
+            "DEGRADED": "#f2b661",
+            "FAILED": "#ff6673",
+        }
+
+        self.assertEqual(dashboard.COLORS, expected)
+        self.assertNotEqual(dashboard.COLORS["HEALTHY"], primary_cyan)
+        red, green, blue = (
+            int(dashboard.COLORS["HEALTHY"][offset:offset + 2], 16)
+            for offset in (1, 3, 5)
+        )
+        self.assertGreater(green, red)
+        self.assertGreater(green, blue)
+        self.assertEqual(
+            len({
+                dashboard.COLORS["HEALTHY"],
+                dashboard.COLORS["STALE"],
+                dashboard.COLORS["FAILED"],
+            }),
+            3,
+        )
+
     def test_greeting_uses_local_hour(self):
         self.assertEqual(
             dashboard.greeting(datetime(2026, 7, 10, 9)),
