@@ -1,10 +1,10 @@
-# Jarvis (AI Companion)
+# AgentTracker
 
-Jarvis is a lightweight, dependency-free AI companion dashboard that **tracks autonomous local agents** — the kind of always-on scripts you schedule with `launchd`/`cron` that quietly do work for you each day.
+AgentTracker is a dependency-free status board for anyone running their own always-on local agents, the kind of scheduled scripts you wire up with `launchd` or `cron` to do work for you every day. It reads each agent's **real on-disk state** (scheduler status, run logs, output artifacts) and renders a self-contained dark-theme HTML dashboard, so at a glance you can tell which agents ran, which stalled, and which failed.
 
-![Jarvis AI Companion dashboard](assets/dashboard.png)
+![AgentTracker dashboard](assets/dashboard.png)
 
-AgentTracker is the dependency-free engine beneath Jarvis. It reads each agent's **real on-disk state** (scheduler status, run logs, output artifacts) and renders a self-contained dark-theme HTML dashboard. The face and companion summary are deterministic presentation of those signals, not a generative model. The dashboard is read-only: no servers, no frameworks, no network calls, and no mutation — just Python stdlib and a single HTML file you open in a browser.
+The board is a deterministic view of real signals, not a generative model. It is read-only: no servers, no frameworks, no network calls, no mutation, just Python stdlib and a single HTML file you open in a browser. The companion face and one-line summary are a friendly presentation of those same on-disk signals.
 
 > *The screenshot and committed `demo.html` are `--demo` renders made from fabricated sample data. Your live `index.html` never leaves your machine.*
 
@@ -37,7 +37,7 @@ python3 gen-dashboard.py --demo --out=demo.html  # render a sample board with fa
 
 📺 **See it without installing anything:** open [`demo.html`](demo.html) (raw HTML, sample data) — or [view it rendered via htmlpreview](https://htmlpreview.github.io/?https://github.com/tarang-tj/AgentTracker/blob/main/demo.html).
 
-The generator (`gen-dashboard.py`) is the whole tool. It ships wired to two example agents (a daily-brief job and a paper-trading picks job) by reading their launchd labels, run-logs, and output files. **Adapt the `*_state()` functions** to point at your own agents' logs and artifacts. The committed `demo.html` is generated with `--demo` (fabricated data) so the live view never exposes real machine state.
+The generator (`gen-dashboard.py`) is the whole tool. It ships wired to two example agents (a daily-brief job and a second scheduled job) by reading their launchd labels, run-logs, and output files. **Adapt the `*_state()` functions** to point at your own agents' logs and artifacts. The committed `demo.html` is generated with `--demo` (fabricated data) so the live view never exposes real machine state.
 
 ## Architecture
 
